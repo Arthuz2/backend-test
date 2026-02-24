@@ -37,7 +37,7 @@ class Owner
         $this->investments = new ArrayCollection();
     }
 
-    public function getId(): ?int
+    public function getId(): ?Uuid
     {
         return $this->id;
     }

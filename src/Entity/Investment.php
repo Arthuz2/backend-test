@@ -31,12 +31,7 @@ class Investment
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $withdrawAt = null;
 
-    public function __construct()
-    {
-        $this->createdAt = new \DateTimeImmutable();
-    }
-
-    public function getId(): ?int
+    public function getId(): ?Uuid
     {
         return $this->id;
     }
