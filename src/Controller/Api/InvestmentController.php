@@ -3,13 +3,18 @@
 namespace App\Controller\Api;
 
 use App\DTO\Investment\CreateInvestmentDTO;
+use App\DTO\Investment\WithdrawInvestmentDTO;
 use App\Exception\CreateInvestmentRequestException;
 use App\Exception\CreationDateInFutureException;
 use App\Exception\InvalidIdException;
+use App\Exception\InvestmentAlreadyWithdrawnException;
 use App\Exception\InvestmentMustBePositiveException;
 use App\Exception\InvestmentNotFoundException;
 use App\Exception\ValidationException;
 use App\Exception\ViewInvestmentRequestException;
+use App\Exception\WithdrawDateBeforeCreationDateException;
+use App\Exception\WithdrawDateInFutureException;
+use App\Exception\WithdrawInvestmentRequestException;
 use App\Service\DTOValidatorService;
 use App\Service\Investment\InvestmentService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -94,6 +99,61 @@ final class InvestmentController extends AbstractController
             return new JsonResponse([
                 'error' => (new ViewInvestmentRequestException())->getMessage(),
             ], JsonResponse::HTTP_BAD_REQUEST);
+        }
+    }
+
+    #[Route('/{id}/withdraw', name: 'withdraw', methods: ['POST'])]
+    public function withdrawInvestment(string $id, Request $request): JsonResponse
+    {
+        $data = $this->serializer->deserialize($request->getContent(), WithdrawInvestmentDTO::class, 'json');
+
+        try {
+            $this->validator->validate($data);
+
+            $result = $this->investmentService->withdrawInvestment($id, $data);
+
+            return new JsonResponse($result, JsonResponse::HTTP_OK);
+        } catch (\Exception $e) {
+            if ($e instanceof ValidationException) {
+                return new JsonResponse([
+                    'error' => $e->getMessage(),
+                    'details' => $e->getErrors(),
+                ], JsonResponse::HTTP_BAD_REQUEST);
+            }
+
+            if ($e instanceof InvalidIdException) {
+                return new JsonResponse([
+                    'error' => $e->getMessage(),
+                ], JsonResponse::HTTP_NOT_FOUND);
+            }
+
+            if ($e instanceof InvestmentNotFoundException) {
+                return new JsonResponse([
+                    'error' => $e->getMessage(),
+                ], JsonResponse::HTTP_NOT_FOUND);
+            }
+
+            if ($e instanceof InvestmentAlreadyWithdrawnException) {
+                return new JsonResponse([
+                    'error' => $e->getMessage(),
+                ], JsonResponse::HTTP_BAD_REQUEST);
+            }
+
+            if ($e instanceof WithdrawDateBeforeCreationDateException) {
+                return new JsonResponse([
+                    'error' => $e->getMessage(),
+                ], JsonResponse::HTTP_BAD_REQUEST);
+            }
+
+            if ($e instanceof WithdrawDateInFutureException) {
+                return new JsonResponse([
+                    'error' => $e->getMessage(),
+                ], JsonResponse::HTTP_BAD_REQUEST);
+            }
+
+            return new JsonResponse([
+                'error' => (new WithdrawInvestmentRequestException())->getMessage(),
+            ], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }
