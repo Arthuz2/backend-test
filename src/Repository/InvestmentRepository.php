@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Investment;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -20,6 +21,20 @@ class InvestmentRepository extends ServiceEntityRepository
     {
         $this->getEntityManager()->persist($investment);
         $this->getEntityManager()->flush();
+    }
+
+    public function createFilteredQuery(string $ownerEmail): QueryBuilder
+    {
+        $qb = $this->createQueryBuilder('i')
+            ->join('i.owner', 'u')
+            ->orderBy('i.createdAt', 'DESC');
+
+        if ($ownerEmail) {
+            $qb->andWhere('u.email = :email')
+                ->setParameter('email', $ownerEmail);
+        }
+
+        return $qb;
     }
 
     //    /**

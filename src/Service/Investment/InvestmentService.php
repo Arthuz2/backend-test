@@ -10,10 +10,12 @@ use App\Exception\InvalidIdException;
 use App\Exception\InvestmentAlreadyWithdrawnException;
 use App\Exception\InvestmentMustBePositiveException;
 use App\Exception\InvestmentNotFoundException;
+use App\Exception\OwnerNotFoundException;
 use App\Exception\WithdrawDateBeforeCreationDateException;
 use App\Exception\WithdrawDateInFutureException;
 use App\Repository\InvestmentRepository;
 use App\Service\Owner\OwnerService;
+use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Component\Uid\Uuid;
 
 class InvestmentService
@@ -22,6 +24,7 @@ class InvestmentService
         private OwnerService $ownerService,
         private InvestmentRepository $investmentRepository,
         private InvestmentCalculatorService $investmentCalculatorService,
+        private PaginatorInterface $paginator,
     ) {}
 
     public function createInvestment(CreateInvestmentDTO $dto): Investment
@@ -133,6 +136,42 @@ class InvestmentService
             "gain" => round($balance - $investment->getInvestedAmount(), 2),
             "tax" => round($balance - $finalBalance, 2),
             "finalWithdrawAmount" => $finalBalance
+        ];
+    }
+
+    public function listInvestmentByOwner(string $ownerEmail, int $page, int $limit): array
+    {
+        $owner = $this->ownerService->getOwnerByEmail($ownerEmail);
+        if (!$owner) {
+            throw new OwnerNotFoundException();
+        }
+
+        $qb = $this->investmentRepository->createFilteredQuery($ownerEmail);
+
+        $pagination = $this->paginator->paginate(
+            $qb,
+            $page,
+            $limit
+        );
+
+        $investments = [];
+        foreach ($pagination->getItems() as $investment) {
+            $investments[] = [
+                'id' => $investment->getId(),
+                'investedAmount' => (float) $investment->getInvestedAmount(),
+                'createdAt' => $investment->getCreatedAt()->format('Y-m-d'),
+                'withdrawAt' => $investment->getWithdrawAt()?->format('Y-m-d'),
+            ];
+        }
+
+        return [
+            'data' => $investments,
+            'meta' => [
+                'page' => $pagination->getCurrentPageNumber(),
+                'limit' => $limit,
+                'total' => $pagination->getTotalItemCount(),
+                'totalPages' => (int) ceil($pagination->getTotalItemCount() / $limit),
+            ],
         ];
     }
 }
