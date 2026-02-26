@@ -32,9 +32,21 @@ git clone <repo-url>
 cd backend-test
 ```
 
-Instale as dependências:
+Mude para a branch development:
+
+```sh
+git checkout development
+```
+
+Crie o arquivo `.env`:
+
+```sh
+cp .env.example .env
+```
 
 Configure o arquivo `.env` com suas credenciais de banco de dados.
+
+Instale as dependências:
 
 ```sh
 composer install
@@ -42,8 +54,10 @@ composer install
 
 Suba o container:
 ```sh
-docker-compose up -d
+docker compose up -d
 ```
+
+A depender da configuração da sua máquina o container docker pode demorar 10-20 segundos pra ficar pronto.
 
 Execute as migrations:
 
