@@ -27,4 +27,9 @@ class OwnerService
 
         return $owner;
     }
+
+    public function getOwnerByEmail(string $email): ?Owner
+    {
+        return $this->ownerRepository->findOneByEmail($email);
+    }
 }
