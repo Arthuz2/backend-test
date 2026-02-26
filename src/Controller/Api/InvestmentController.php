@@ -11,6 +11,7 @@ use App\Exception\InvestmentAlreadyWithdrawnException;
 use App\Exception\InvestmentMustBePositiveException;
 use App\Exception\InvestmentNotFoundException;
 use App\Exception\ListInvestmentsRequestException;
+use App\Exception\OwnerEmailRequiredException;
 use App\Exception\OwnerNotFoundException;
 use App\Exception\ValidationException;
 use App\Exception\ViewInvestmentRequestException;
@@ -162,7 +163,7 @@ final class InvestmentController extends AbstractController
     #[Route('/', name: 'list', methods: ['GET'])]
     public function listInvestments(Request $request): JsonResponse
     {
-        $ownerEmail = $request->query->get('ownerEmail');
+        $ownerEmail = $request->query->get('ownerEmail', '');
         $page = (int) max(1, $request->query->get('page', 1));
         $limit = (int) min(50, max(5, $request->query->get('limit', 10)));
 
@@ -175,6 +176,12 @@ final class InvestmentController extends AbstractController
 
             return new JsonResponse($result, JsonResponse::HTTP_OK);
         } catch (\Exception $e) {
+            if ($e instanceof OwnerEmailRequiredException) {
+                return new JsonResponse([
+                    'error' => $e->getMessage(),
+                ], JsonResponse::HTTP_BAD_REQUEST);
+            }
+
             if ($e instanceof OwnerNotFoundException) {
                 return new JsonResponse([
                     'error' => $e->getMessage(),

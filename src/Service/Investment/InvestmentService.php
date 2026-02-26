@@ -10,6 +10,7 @@ use App\Exception\InvalidIdException;
 use App\Exception\InvestmentAlreadyWithdrawnException;
 use App\Exception\InvestmentMustBePositiveException;
 use App\Exception\InvestmentNotFoundException;
+use App\Exception\OwnerEmailRequiredException;
 use App\Exception\OwnerNotFoundException;
 use App\Exception\WithdrawDateBeforeCreationDateException;
 use App\Exception\WithdrawDateInFutureException;
@@ -141,6 +142,10 @@ class InvestmentService
 
     public function listInvestmentByOwner(string $ownerEmail, int $page, int $limit): array
     {
+        if (!$ownerEmail) {
+            throw new OwnerEmailRequiredException();
+        }
+
         $owner = $this->ownerService->getOwnerByEmail($ownerEmail);
         if (!$owner) {
             throw new OwnerNotFoundException();
